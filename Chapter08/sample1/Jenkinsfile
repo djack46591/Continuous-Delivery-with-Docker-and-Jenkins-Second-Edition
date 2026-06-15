@@ -29,6 +29,24 @@ pipeline {
                 sh 'cd Chapter08/sample1 && ./gradlew jacocoTestCoverageVerification'
             }
         }
+
+        stage('Checkstyle') {
+            steps {
+                sh 'cd Chapter08/sample1 && ./gradlew checkstyleTest || true'
+            }
+            post {
+                always {
+                    publishHTML(target: [
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: false,
+                        keepAll: true,
+                        reportDir: 'Chapter08/sample1/build/reports/checkstyle',
+                        reportFiles: 'test.html', 
+                        reportName: 'jacoco checkstyle'
+                    ])
+                }
+            }
+        }
         
         stage("Static code analysis") {
             steps {
