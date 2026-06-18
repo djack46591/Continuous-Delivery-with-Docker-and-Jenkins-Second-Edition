@@ -2,7 +2,7 @@ pipeline {
     // Runs the pipeline in an agent container 
     agent {
         docker { 
-            image 'openjdk:11-jdk' 
+            image 'eclipse-temurin:11-jdk' 
         }
     }
     
