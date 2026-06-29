@@ -1,63 +1,34 @@
 pipeline {
-    agent any
-    
-    triggers {
-        pollSCM('* * * * *')
+    agent { 
+        docker { 
+            image 'gradle:jdk17'
+            // This part handles the CACHING part of your assignment
+            args '-v /var/jenkins_home/.gradle:/home/gradle/.gradle'
+        } 
     }
-    
     stages {
-        stage("Compile") {
+        stage('Validate Branch') {
             steps {
-                sh "cd Chapter08/sample1 && ./gradlew compileJava"
-            }
-        }
-        
-        stage("Unit test") {
-            steps {
-                sh "cd Chapter08/sample1 && ./gradlew test"
-            }
-        }
-        
-        stage("Code coverage") {
-            steps {
-                sh "cd Chapter08/sample1 && ./gradlew jacocoTestReport"
-            }
-        }
-        
-        stage('Test Coverage') {
-            steps {
-                sh 'cd Chapter08/sample1 && ./gradlew jacocoTestCoverageVerification'
-            }
-        }
-
-        stage('Checkstyle') {
-            steps {
-                sh 'cd Chapter08/sample1 && ./gradlew checkstyleTest || true'
-            }
-            post {
-                always {
-                    publishHTML(target: [
-                        allowMissing: false,
-                        alwaysLinkToLastBuild: false,
-                        keepAll: true,
-                        reportDir: 'Chapter08/sample1/build/reports/checkstyle',
-                        reportFiles: 'test.html', 
-                        reportName: 'jacoco checkstyle'
-                    ])
+                script {
+                    // This handles the CONDITIONAL branch logic
+                    if (env.BRANCH_NAME != 'main' && !env.BRANCH_NAME.contains('feature')) {
+                        error "Pipeline failed: Branch '${env.BRANCH_NAME}' is not allowed."
+                    }
                 }
             }
         }
-        
-        stage("Static code analysis") {
-            steps {
-                sh "cd Chapter08/sample1 && ./gradlew checkstyleMain"
-            }
+        stage('CodeCoverage') {
+            when { branch 'main' } // ONLY on main
+            steps { sh './gradlew jacocoTestReport' }
         }
-        
-        stage("Package") {
-            steps {
-                sh "cd Chapter08/sample1 && ./gradlew build"
+        stage('Run Tests') {
+            when {
+                allOf {
+                    branch 'feature*'
+                    not { branch 'main' }
+                }
             }
+            steps { sh './gradlew test' } // ONLY on feature branches
         }
     }
 }
