@@ -2,7 +2,6 @@ pipeline {
     agent { 
         docker { 
             image 'gradle:jdk17'
-            // This part handles the CACHING part of your assignment
             args '-v /var/jenkins_home/.gradle:/home/gradle/.gradle'
         } 
     }
@@ -10,25 +9,24 @@ pipeline {
         stage('Validate Branch') {
             steps {
                 script {
-                    // This handles the CONDITIONAL branch logic
-                    if (env.BRANCH_NAME != 'main' && !env.BRANCH_NAME.contains('feature')) {
+                    if (env.BRANCH_NAME != 'master' && !env.BRANCH_NAME.contains('feature')) {
                         error "Pipeline failed: Branch '${env.BRANCH_NAME}' is not allowed."
                     }
                 }
             }
         }
         stage('CodeCoverage') {
-            when { branch 'main' } // ONLY on main
-            steps { sh './gradlew jacocoTestReport' }
+            when { branch 'master' } // Ensure this matches your branch name (master or main)
+            steps { sh 'cd Chapter08/sample1 && ./gradlew jacocoTestReport' }
         }
         stage('Run Tests') {
             when {
                 allOf {
                     branch 'feature*'
-                    not { branch 'main' }
+                    not { branch 'master' }
                 }
             }
-            steps { sh './gradlew test' } // ONLY on feature branches
+            steps { sh 'cd Chapter08/sample1 && ./gradlew test' }
         }
     }
 }
