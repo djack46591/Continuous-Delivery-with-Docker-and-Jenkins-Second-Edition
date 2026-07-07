@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'eclipse-temurin:11-jdk'
-        }
-    }
-
+    agent { docker { image 'eclipse-temurin:11-jdk' } }
     stages {
         stage("Static Analysis") {
             when { not { branch 'master' } }
@@ -14,7 +9,6 @@ pipeline {
                 sh "cd Chapter08/sample1 && ./gradlew checkstyleTest || true"
             }
         }
-
         stage("Unit & Integration Tests") {
             when { not { branch 'master' } }
             steps {
@@ -23,7 +17,6 @@ pipeline {
                 sh "cd Chapter08/sample1 && ./gradlew test"
             }
         }
-
         stage("Code Coverage") {
             when { branch 'master' }
             steps {
@@ -32,25 +25,17 @@ pipeline {
                 sh "cd Chapter08/sample1 && ./gradlew jacocoTestCoverageVerification"
             }
         }
-
         stage("Package") {
-            steps {
-                sh "cd Chapter08/sample1 && ./gradlew build"
-            }
+            steps { sh "cd Chapter08/sample1 && ./gradlew build" }
         }
     }
-
     post {
         always {
             jacoco execPattern: 'Chapter08/sample1/build/jacoco/**/*.exec',
                    classPattern: 'Chapter08/sample1/build/classes/java/main',
                    sourcePattern: 'Chapter08/sample1/src/main/java'
         }
-        success {
-            echo "tests pass!"
-        }
-        failure {
-            echo "tests fail!"
-        }
+        success { echo "tests pass!" }
+        failure { echo "tests fail!" }
     }
 }
