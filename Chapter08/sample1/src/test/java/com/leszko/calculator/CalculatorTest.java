@@ -10,6 +10,7 @@ public class CalculatorTest {
 
      @Test
      public void testSum() {
-          assertEquals(5, calculator.sum(2, 3));
+          // Changed to intentionally fail for the Exercise 7 audit
+          assertEquals(5, 2 + 2); 
      }
 }
