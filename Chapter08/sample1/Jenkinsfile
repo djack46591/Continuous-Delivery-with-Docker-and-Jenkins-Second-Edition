@@ -1,63 +1,73 @@
-pipeline {
-    agent any
-    
-    triggers {
-        pollSCM('* * * * *')
-    }
-    
-    stages {
-        stage("Compile") {
-            steps {
-                sh "cd Chapter08/sample1 && ./gradlew compileJava"
-            }
-        }
-        
-        stage("Unit test") {
-            steps {
-                sh "cd Chapter08/sample1 && ./gradlew test"
-            }
-        }
-        
-        stage("Code coverage") {
-            steps {
-                sh "cd Chapter08/sample1 && ./gradlew jacocoTestReport"
-            }
-        }
-        
-        stage('Test Coverage') {
-            steps {
-                sh 'cd Chapter08/sample1 && ./gradlew jacocoTestCoverageVerification'
-            }
-        }
-
-        stage('Checkstyle') {
-            steps {
-                sh 'cd Chapter08/sample1 && ./gradlew checkstyleTest || true'
-            }
-            post {
-                always {
-                    publishHTML(target: [
-                        allowMissing: false,
-                        alwaysLinkToLastBuild: false,
-                        keepAll: true,
-                        reportDir: 'Chapter08/sample1/build/reports/checkstyle',
-                        reportFiles: 'test.html', 
-                        reportName: 'jacoco checkstyle'
-                    ])
-                }
-            }
-        }
-        
-        stage("Static code analysis") {
-            steps {
-                sh "cd Chapter08/sample1 && ./gradlew checkstyleMain"
-            }
-        }
-        
-        stage("Package") {
-            steps {
-                sh "cd Chapter08/sample1 && ./gradlew build"
-            }
-        }
-    }
+pipeline { 
+   agent { 
+       docker { 
+           image 'gradle:jdk17' 
+           args '-v /var/jenkins_home/.gradle:/home/gradle/.gradle' 
+       } 
+   } 
+   options { 
+       timestamps() 
+   } 
+   stages { 
+       stage('Compile') { 
+           steps { 
+               sh 'cd Chapter08/sample1 && ./gradlew compileJava compileTestJava' 
+           } 
+       } 
+       stage('Static Analysis & Checkstyle') { 
+           when { 
+               not {  
+                   anyOf { 
+                       branch 'master' 
+                       branch 'main' 
+                   } 
+               } 
+           } 
+           steps { 
+               sh 'cd Chapter08/sample1 && ./gradlew checkstyleMain checkstyleTest || true' 
+           } 
+       } 
+       stage('Unit & Integration Tests') { 
+           when { 
+               not {  
+                   anyOf { 
+                       branch 'master' 
+                       branch 'main' 
+                   } 
+               } 
+           } 
+           steps { 
+               sh 'cd Chapter08/sample1 && ./gradlew test jacocoTestReport --continue' 
+           } 
+       } 
+       stage('CodeCoverage') { 
+           when { 
+               anyOf { 
+                   branch 'master' 
+                   branch 'main' 
+               } 
+           } 
+           steps { 
+               sh 'cd Chapter08/sample1 && ./gradlew jacocoTestReport jacocoTestCoverageVerification' 
+           } 
+       } 
+   } 
+   post { 
+       always { 
+           publishHTML(target: [ 
+               allowMissing: false, 
+               alwaysLinkToLastBuild: true, 
+               keepAll: true, 
+               reportDir: 'Chapter08/sample1/build/reports/jacoco/test/html', 
+               reportFiles: 'index.html', 
+               reportName: 'JaCoCo Coverage Report' 
+           ]) 
+       } 
+       success { 
+           echo "tests pass!" 
+       } 
+       failure { 
+           echo "tests fail!" 
+       } 
+   } 
 }
