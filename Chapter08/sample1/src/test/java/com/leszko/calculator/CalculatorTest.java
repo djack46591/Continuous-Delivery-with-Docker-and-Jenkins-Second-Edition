@@ -11,6 +11,6 @@ public class CalculatorTest {
      @Test
      public void testSum() {
           // Changed to intentionally fail for the Exercise 7 audit
-          assertEquals(5, 2 + 2); 
+          assertEquals(4, 2 + 2); 
      }
 }
